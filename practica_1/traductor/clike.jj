@@ -82,21 +82,26 @@ TOKEN : {
 |	< tFIN_CORCH: "]" >
 |	< tINI_PARENT: "(" >
 |	< tFIN_PARENT: ")" >
-	...
 }
 
 TOKEN : {
- 	< tIDENT : [#LETTER]([#tBBAJA | #DIGIT | #LETTER])* >
-	< tCONST : [#DIGIT]+ 
-			   | ["""][~"\n","\t"]["""] 
-			   | ['][~"\n","\t"]['] 
-			   | "true"
-			   | "false"
-
-	>
+| 	< tIDENT : [#LETTER]([#tBBAJA | #DIGIT | #LETTER])* >
+|	< tDIGIT_CONST: [#DIGIT]+ >
+|	< tSTRING_CONST: ["""][~"\n","\t"]["""] >
+|	< tCHAR_CONST: ['][~"\n","\t"][']  >
+|	< tBOOL_CONST: "true" | "false" >
 }
 
-SKIP:  { " " | "\t" | "\n" | [#tINIT_COMENT][~"\n"]*["\n"]}
+SKIP:  { " " | "\t" | "\n" }
+
+SPECIAL_TOKEN :
+{
+  <tERROR: ~[] > {
+  System.out.println("(<" + matchedToken.beginLine + "," + matchedToken.beginColumn + ">): simbolo no reconocido: " + matchedToken.image)}
+  
+  
+  <tCOMENT: [#tINIT_COMENT][~"\n"]*["\n"] > {} 
+}
 
 //------------ Símbolo inicial de la gramática. Para análisis léxico no hace falta más
 void Programa() : 
@@ -112,6 +117,6 @@ void Programa() :
 
 TOKEN_MGR_DECLS : {
 	void CommonTokenAction(Token token) {
-		System.out.println("(" + token.beginLine + "," + token.beginColumn + "): " + token.kind + " " + token.image);
+		System.out.println("(" + token.beginLine + "," + token.beginColumn + "): " + clikeConstants.tokenImage[token.kind] + " " + token.image);
 	}
 }
