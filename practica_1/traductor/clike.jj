@@ -33,7 +33,7 @@ public class clike {
 	            parser = new clike(new java.io.FileInputStream(args[0]));
 			}
 			//Programa es el símbolo inicial de la gramática
-			parser.Programa(at);
+			parser.Programa();
 			//...
 			System.out.println("***** Análisis terminado con éxito *****");
 		}
@@ -43,6 +43,9 @@ public class clike {
 		catch (TokenMgrError e) {
         	System.err.println("LEX_ERROR: " + e.getMessage());
         }
+		catch (Exception e) {
+      		System.out.println("EXCEPCION: " + e.getMessage());
+		}
         //...
     }
 }
@@ -51,23 +54,28 @@ PARSER_END(clike)
 TOKEN : {
  	< #LETTER: (["a"-"z","A"-"Z"]) >
 |	< #DIGIT: ["0"-"9"] >
+|	< #tBBAJA: "_" >
+|	< #tINIT_COMENT: "//" >
 }
 
 TOKEN : {
-|	< tBOOL: "bool" >
+	< tBOOL: "bool" >
 |	< tCHAR: "char" >
 |	< tINT: "int" >
-|	< tCADENA: "int" >
+|	< tCADENA: "string" >
 |   < tVOID: "void" >
 |	< tRETURN: "return" >
 |	< tWHILE: "while" >
+|	< tIF:	"if" >
+|	< tELSE: "else" >
+|	< tFOR: "for" >
 |	< tCOMA: "," >
 |	< tPCOMA: ";" >
 |	< tDIV: "/" >
 |	< tSUM: "+" >
 |	< tRES: "-" >
 |	< tMUL: "*" >
-|	< #tINIT_COMENT: "//" >
+|	< tMODULO: "%" >
 |	< tIGUAL: "=" >
 |	< tDIST: "!=" >
 |	< tEQUIVALE: "==" >
@@ -75,32 +83,38 @@ TOKEN : {
 |	< tMAYOR: ">" >
 |	< tMENOR_IG: "<=" >
 |	< tMAYOR_IG: ">=" >
+|	< tAND: "&&" >
+|	< tOR: "||" >
 |	< tNEG: "!" >
 |	< tREF : "&" >
-|	< #tBBAJA: "_" >
 |	< tINI_CORCH: "[" >
 |	< tFIN_CORCH: "]" >
 |	< tINI_PARENT: "(" >
 |	< tFIN_PARENT: ")" >
+|	< tINI_LLAVES: "{" >
+|	< tFIN_LLAVES: "}" >
 }
 
 TOKEN : {
-| 	< tIDENT : [#LETTER]([#tBBAJA | #DIGIT | #LETTER])* >
-|	< tDIGIT_CONST: [#DIGIT]+ >
-|	< tSTRING_CONST: ["""][~"\n","\t"]["""] >
-|	< tCHAR_CONST: ['][~"\n","\t"][']  >
+ 	< tIDENT : <LETTER>(<tBBAJA> | <DIGIT> | <LETTER>)* >
+|	< tDIGIT_CONST: (<DIGIT>)+ >
+|	< tSTRING_CONST: ["\""] (~["\n","\t","\""])* ["\""] >
+|	< tCHAR_CONST: ["\'"] ~["\n","\t"] ["\'"]  >
 |	< tBOOL_CONST: "true" | "false" >
 }
 
-SKIP:  { " " | "\t" | "\n" }
+SKIP:  { " " | "\t" | "\n" | "\r"}
 
 SPECIAL_TOKEN :
 {
-  <tERROR: ~[] > {
-  System.out.println("(<" + matchedToken.beginLine + "," + matchedToken.beginColumn + ">): simbolo no reconocido: " + matchedToken.image)}
-  
-  
-  <tCOMENT: [#tINIT_COMENT][~"\n"]*["\n"] > {} 
+	<tERROR: ~[] > {System.out.println("ERROR LEXICO: (<" + matchedToken.beginLine + "," + matchedToken.beginColumn + ">): simbolo no reconocido: " + matchedToken.image);}
+|	<tCOMENT: <tINIT_COMENT>(~["\n","\r"])* ("\n" | "\r" | "\r\n") > {} 
+}
+
+TOKEN_MGR_DECLS : {
+	static void CommonTokenAction(Token token) {
+		System.out.println("(" + token.beginLine + "," + token.beginColumn + "): " + clikeConstants.tokenImage[token.kind] + " " + token.image);
+	}
 }
 
 //------------ Símbolo inicial de la gramática. Para análisis léxico no hace falta más
@@ -110,13 +124,10 @@ void Programa() :
 }
 {
 	( 
-		< tBEGIN > | < tBOOL > | < tCHAR > | ...
+		< tBOOL > | < tCHAR > | < tINT > | < tCADENA > | < tVOID > | < tRETURN >  | < tWHILE > | <tIF> | <tELSE> | < tFOR > | < tCOMA > | < tPCOMA >
+		| < tDIV > | < tSUM > | < tRES > | < tMUL > | <tMODULO> | < tIGUAL > | < tDIST > | < tEQUIVALE > | < tMENOR > | < tMAYOR > | < tMENOR_IG >
+		| < tMAYOR_IG > | < tAND > | < tOR > | < tNEG > | < tREF > | < tINI_CORCH > | < tFIN_CORCH > | < tINI_PARENT > | < tFIN_PARENT > | < tINI_LLAVES >
+		| < tFIN_LLAVES > | < tIDENT > | < tDIGIT_CONST > | < tSTRING_CONST > | < tCHAR_CONST > | < tBOOL_CONST >
 	)+
 	< EOF >
-}
-
-TOKEN_MGR_DECLS : {
-	void CommonTokenAction(Token token) {
-		System.out.println("(" + token.beginLine + "," + token.beginColumn + "): " + clikeConstants.tokenImage[token.kind] + " " + token.image);
-	}
 }
