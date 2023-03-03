@@ -68,7 +68,6 @@ TOKEN : {
 |	< tWHILE: "while" >
 |	< tIF:	"if" >
 |	< tELSE: "else" >
-|	< tFOR: "for" >
 |	< tCOMA: "," >
 |	< tPCOMA: ";" >
 |	< tDIV: "/" >
