@@ -147,13 +147,6 @@ void declaracion_variables():
 	resto_declaracion_vars()
 }
 
-//........................... tipo: <tCHAR> | <tINT> | <tBOOL> | <tCADENA> | <tVOID>
-void tipo():
-{}
-{
-	<tCHAR> | <tINT> | <tBOOL> | <tCADENA> | <tVOID>
-}
-
 //.......................... resto_declaracion_vars: <tCOMA> < tIDENT > resto_declaracion_vars | <tPCOMA>
 void resto_declaracion_vars():
 {}
@@ -187,7 +180,7 @@ void resto_declaracion_func_proc():
 void declaracion_variables_func_proc():
 {}
 {
- 	( tipo() < tIDENT > ( < tCOMA > tipo() < tIDENT > )* )?
+ 	( tipo() < tREF >? < tIDENT > ( < tCOMA > tipo() < tIDENT > )* )?
 }
 
 //........................ 
@@ -270,8 +263,7 @@ void inst_escribir_linea():
 void resto_inst_escribir_linea():
 {}
 {
-	expresion() ( < tCOMA > expresion() )*
-| //Epsilon
+	(expresion() ( < tCOMA > expresion() )* )?
 
 }
 
@@ -326,6 +318,13 @@ void asignacion():
 {
 	expresion()
 |	inst_invoc_proc()
+}
+
+//............................... asignacion: expresion | inst_invoc_proc
+void asignable():
+{}
+{
+	< tIDENT > ( < tINI_CORCH > expresion() < tFIN_CORCH > )? 
 }
 
 //............................... expresion: relacion (mas_relation)?
@@ -431,6 +430,13 @@ void primario():
 |	< tSTRING_CONST >
 |	< tTRUE >
 |	< tFALSE >
+}
+
+//........................... tipo: <tCHAR> | <tINT> | <tBOOL> | <tCADENA> | <tVOID>
+void tipo():
+{}
+{
+	<tCHAR> | <tINT> | <tBOOL> | <tCADENA> | <tVOID>
 }
 
 //------------ Símbolo inicial de la gramática. Para análisis léxico no hace falta más
