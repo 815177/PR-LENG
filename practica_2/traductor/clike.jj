@@ -101,7 +101,7 @@ TOKEN : {
 TOKEN : {
  	< tIDENT : <LETTER>(<tBBAJA> | <DIGIT> | <LETTER>)* >
 |	< tDIGIT_CONST: (<DIGIT>)+ >
-|	< tSTRING_CONST: ["\""] (~["\n","\t","\""])* ["\""] >
+|	< tSTRING_CONST: ["\""] ((~["\n","\t","\""]) | "\"\"")* ["\""] >
 |	< tCHAR_CONST: ["\'"] ~["\n","\t"] ["\'"]  >
 |	< tTRUE: "true" >
 |	< tFALSE: "false" >
@@ -446,7 +446,7 @@ void tipo():
 }
 {
 	( 
-		< tBOOL > | < tCHAR > | < tINT > | < tCADENA > | < tVOID > | < tRETURN >  | < tWHILE > | <tIF> | <tELSE> | < tFOR > | < tCOMA > | < tPCOMA >
+		< tBOOL > | < tCHAR > | < tINT > | < tCADENA > | < tVOID > | < tRETURN >  | < tWHILE > | <tIF> | <tELSE> | < tCOMA > | < tPCOMA >
 		| < tDIV > | < tSUM > | < tRES > | < tMUL > | <tMODULO> | < tIGUAL > | < tDIST > | < tEQUIVALE > | < tMENOR > | < tMAYOR > | < tMENOR_IG >
 		| < tMAYOR_IG > | < tAND > | < tOR > | < tNEG > | < tREF > | < tINI_CORCH > | < tFIN_CORCH > | < tINI_PARENT > | < tFIN_PARENT > | < tINI_LLAVES >
 		| < tFIN_LLAVES > | < tIDENT > | < tDIGIT_CONST > | < tSTRING_CONST > | < tCHAR_CONST > | < tTRUE > | < tFALSE >
