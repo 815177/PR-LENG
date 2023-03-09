@@ -96,6 +96,10 @@ TOKEN : {
 |	< tPRINT: "print" >
 |	< tREAD: "read" >
 |	< tREAD_LN: "read_ln" >
+|	< tINT2CHAR: "int2char" >
+|	< tCHAR2INT: "char2int" >
+|	< tTRUE: "true" >
+|	< tFALSE: "false" >
 }
 
 TOKEN : {
@@ -103,8 +107,6 @@ TOKEN : {
 |	< tDIGIT_CONST: (<DIGIT>)+ >
 |	< tSTRING_CONST: ["\""] ((~["\n","\t","\""]) | "\"\"")* ["\""] >
 |	< tCHAR_CONST: ["\'"] ~["\n","\t"] ["\'"]  >
-|	< tTRUE: "true" >
-|	< tFALSE: "false" >
 }
 
 SKIP:  { " " | "\t" | "\n" | "\r"}
@@ -133,7 +135,7 @@ void Programa():
 void declaracion():
 {}
 { 
-	LOOKAHEAD(3)
+	LOOKAHEAD(4)
 	declaracion_variables()
 |	declaracion_func_proc()
 }
@@ -172,6 +174,7 @@ void resto_declaracion_func_proc():
 	declaracion_variables_func_proc()
 	< tFIN_PARENT >
 	< tINI_LLAVES >
+	(declaracion_variables())* //Antes de de poner instrucciones se delcran variables locales
 	( instruccion() )*
 	< tFIN_LLAVES >
 }
@@ -180,7 +183,7 @@ void resto_declaracion_func_proc():
 void declaracion_variables_func_proc():
 {}
 {
- 	( tipo() < tREF >? < tIDENT > ( < tCOMA > tipo() < tIDENT > )* )?
+ 	( tipo() (< tREF >)? < tIDENT > ( < tCOMA > tipo() (< tREF >)? < tIDENT > )* )?
 }
 
 //........................ 
@@ -268,7 +271,7 @@ void resto_inst_escribir_linea():
 }
 
 //....................... inst_invoc_proc: <tIDENT> <tINI_PARENT> (expresion <tCOMA>)* expresion <tFIN_PARENT>
-inst_invoc_proc():
+void inst_invoc_proc():
 {}
 {
 	< tIDENT > < tINI_PARENT > parametros_invoc_proc() < tFIN_PARENT >
@@ -278,15 +281,14 @@ inst_invoc_proc():
 void parametros_invoc_proc():
 {}
 {
-	expresion() ( < tCOMA > expresion() )* 
-|
+	(expresion() ( < tCOMA > expresion() )*)?
 }
 
 //............ inst_seleccion: <tIF> <tINI_PARENT> expresion <tFIN_PARENT> <tINI_LLAVES> (instruccion)* <tFIN_LLAVES>
 void inst_seleccion():
 {}
 {
-	< tIF > < tINI_PARENT > expresion() < tFIN_PARENT > < tINI_LLAVES > ( instruccion() )* < tFIN_LLAVES >
+	< tIF > < tINI_PARENT > expresion() < tFIN_PARENT > < tINI_LLAVES > ( instruccion() )* < tFIN_LLAVES > (< tELSE > < tINI_LLAVES > ( instruccion() )* < tFIN_LLAVES >)?
 }
 
 //.......... inst_iteracion: <tWHILE> <tINI_PARENT> expresion <tFIN_PARENT> <tINI_LLAVES> (instruccion)* <tFIN_LLAVES>
@@ -316,7 +318,7 @@ void inst_asignacion():
 void asignacion():
 {}
 {
-	expresion()
+	LOOKAHEAD(3) expresion()
 |	inst_invoc_proc()
 }
 
@@ -379,7 +381,7 @@ void expresion_simple():
 {
 	( op_MAS_MENOS() )? 
 	termino()
-	( op_MAS_MENOS() termino() )*
+	( LOOKAHEAD(2) op_MAS_MENOS() termino() )*
 }
 
 //..................................... op_MAS_MENOS: <tSUM> | <tRES>
@@ -438,6 +440,7 @@ void tipo():
 {
 	<tCHAR> | <tINT> | <tBOOL> | <tCADENA> | <tVOID>
 }
+
 
 //------------ Símbolo inicial de la gramática. Para análisis léxico no hace falta más
 /*void Programa() : 
