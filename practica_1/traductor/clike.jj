@@ -97,7 +97,7 @@ TOKEN : {
 TOKEN : {
  	< tIDENT : <LETTER>(<tBBAJA> | <DIGIT> | <LETTER>)* >
 |	< tDIGIT_CONST: (<DIGIT>)+ >
-|	< tSTRING_CONST: ["\""] (~["\n","\t","\""])* ["\""] >
+|	< tSTRING_CONST: ["\""] ((~["\n","\t","\""]) | "\"\"")* ["\""] >
 |	< tCHAR_CONST: ["\'"] ~["\n","\t"] ["\'"]  >
 |	< tBOOL_CONST: "true" | "false" >
 }
