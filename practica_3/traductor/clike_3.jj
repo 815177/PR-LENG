@@ -1,0 +1,454 @@
+//*****************************************************************
+// File:   cl.jj
+// Author: Procesadores de Lenguajes-University of Zaragoza
+// Date:   noviembre 2022
+// Coms:   export JAVA_HOME=/usr/
+//		   compilar mediante "ant"
+//*****************************************************************
+
+options {
+ 	IGNORE_CASE = false;
+ 	COMMON_TOKEN_ACTION = true;
+ 	// DEBUG_PARSER = true;
+ 	// ERROR_REPORTING = false;
+}
+
+PARSER_BEGIN(clike)
+
+package traductor;
+
+//...
+
+public class clike {
+	//...
+	
+    public static void main(String[] args) {
+    	clike parser = null;
+    	
+    	try {
+	    	if(args.length == 0) {
+				parser = new clike(System.in);
+			}
+			else {
+	            parser = new clike(new java.io.FileInputStream(args[0]));
+			}
+			//Programa es el símbolo inicial de la gramática
+			parser.Programa();
+			//...
+			System.out.println("***** Análisis terminado con éxito *****");
+		}
+		catch (java.io.FileNotFoundException e) {
+			System.err.println ("Fichero " + args[0] + " no encontrado.");
+		}
+		catch (TokenMgrError e) {
+        	System.err.println("LEX_ERROR: " + e.getMessage());
+        }
+		catch (Exception e) {
+      		System.out.println("EXCEPCION: " + e.getMessage());
+		}
+        //...
+    }
+}
+PARSER_END(clike)
+
+TOKEN : {
+ 	< #LETTER: (["a"-"z","A"-"Z"]) >
+|	< #DIGIT: ["0"-"9"] >
+|	< #tBBAJA: "_" >
+|	< #tINIT_COMENT: "//" >
+}
+
+TOKEN : {
+	< tBOOL: "bool" >
+|	< tCHAR: "char" >
+|	< tINT: "int" >
+|	< tCADENA: "string" >
+|   < tVOID: "void" >
+|	< tRETURN: "return" >
+|	< tWHILE: "while" >
+|	< tIF:	"if" >
+|	< tELSE: "else" >
+|	< tCOMA: "," >
+|	< tPCOMA: ";" >
+|	< tDIV: "/" >
+|	< tSUM: "+" >
+|	< tRES: "-" >
+|	< tMUL: "*" >
+|	< tMODULO: "%" >
+|	< tIGUAL: "=" >
+|	< tDIST: "!=" >
+|	< tEQUIVALE: "==" >
+|	< tMENOR: "<" >
+|	< tMAYOR: ">" >
+|	< tMENOR_IG: "<=" >
+|	< tMAYOR_IG: ">=" >
+|	< tAND: "&&" >
+|	< tOR: "||" >
+|	< tNEG: "!" >
+|	< tREF : "&" >
+|	< tINI_CORCH: "[" >
+|	< tFIN_CORCH: "]" >
+|	< tINI_PARENT: "(" >
+|	< tFIN_PARENT: ")" >
+|	< tINI_LLAVES: "{" >
+|	< tFIN_LLAVES: "}" >
+|	< tPRINT_LN: "print_ln" >
+|	< tPRINT: "print" >
+|	< tREAD: "read" >
+|	< tREAD_LN: "read_ln" >
+|	< tINT2CHAR: "int2char" >
+|	< tCHAR2INT: "char2int" >
+|	< tTRUE: "true" >
+|	< tFALSE: "false" >
+}
+
+TOKEN : {
+ 	< tIDENT : <LETTER>(<tBBAJA> | <DIGIT> | <LETTER>)* >
+|	< tDIGIT_CONST: (<DIGIT>)+ >
+|	< tSTRING_CONST: ["\""] ((~["\n","\t","\""]) | "\"\"")* ["\""] >
+|	< tCHAR_CONST: ["\'"] ~["\n","\t"] ["\'"]  >
+}
+
+SKIP:  { " " | "\t" | "\n" | "\r"}
+
+SPECIAL_TOKEN :
+{
+	<tERROR: ~[] > {System.out.println("ERROR LEXICO: (<" + matchedToken.beginLine + "," + matchedToken.beginColumn + ">): simbolo no reconocido: " + matchedToken.image);}
+|	<tCOMENT: <tINIT_COMENT>(~["\n","\r"])* ("\n" | "\r" | "\r\n") > {} 
+}
+
+TOKEN_MGR_DECLS : {
+	static void CommonTokenAction(Token token) {
+		System.out.println("(" + token.beginLine + "," + token.beginColumn + "): " + clikeConstants.tokenImage[token.kind] + " " + token.image);
+	}
+}
+
+//.................... Programa: (declaracion)+ <EOF>
+void Programa(): 
+{}
+{
+	( declaracion() )+
+	< EOF >
+}
+
+//......................... declaracion: LOOKAHEAD(3) declaracion_variables | declaracion_func_proc
+void declaracion():
+{}
+{ 
+	LOOKAHEAD(4)
+	declaracion_variables()
+|	declaracion_func_proc()
+}
+
+//.......................... declaracion_variables: tipo <tIDENT> resto_declaracion_vars
+void declaracion_variables():
+{}
+{
+ 	tipo()
+	< tIDENT >
+	(<tINI_CORCH> <tDIGIT_CONST> <tFIN_CORCH>)?
+	resto_declaracion_vars()
+}
+
+//.......................... resto_declaracion_vars: <tCOMA> < tIDENT > resto_declaracion_vars | <tPCOMA>
+void resto_declaracion_vars():
+{}
+{
+	<tCOMA> < tIDENT > (<tINI_CORCH> <tDIGIT_CONST> <tFIN_CORCH>)? resto_declaracion_vars() 
+	| <tPCOMA>
+}
+
+//........................... declaracion_func_proc: tipo <tIDENT> resto_declaracion_func_proc
+void declaracion_func_proc(): 
+{}
+{
+	tipo()
+	< tIDENT >
+	resto_declaracion_func_proc()
+}
+
+//........................... resto_declaracion_func_proc:
+void resto_declaracion_func_proc(): 
+{}
+{
+	< tINI_PARENT >
+	declaracion_variables_func_proc()
+	< tFIN_PARENT >
+	< tINI_LLAVES >
+	(declaracion_variables())* //Antes de de poner instrucciones se delcran variables locales
+	( instruccion() )*
+	< tFIN_LLAVES >
+}
+
+//...................... resto_declaracion_func:tipo() < tIDENT > resto_declaracion_variables_func_proc()
+void declaracion_variables_func_proc():
+{}
+{
+ 	( tipo() (< tREF >)? < tIDENT > 
+	(<tINI_CORCH> <tDIGIT_CONST> <tFIN_CORCH>)? 
+	( < tCOMA > 
+	tipo() (< tREF >)? < tIDENT > (<tINI_CORCH> <tDIGIT_CONST> <tFIN_CORCH>)?)* )?
+}
+
+//........................ 
+void instruccion():
+{}
+{
+	inst_leer() < tPCOMA >
+|	inst_leer_linea() < tPCOMA > 
+|	inst_escribir() < tPCOMA >
+|	inst_escribir_linea() < tPCOMA >
+|	LOOKAHEAD(3) inst_invoc_proc() < tPCOMA >	
+|	inst_asignacion() < tPCOMA > 
+|	inst_seleccion()
+|	inst_iteracion()
+|	inst_return() < tPCOMA >
+}
+
+//.............................. inst_leer: <tREAD> <tINI_PARENT> <resto_inst_leer> <tFIN_PARENT>
+void inst_leer():
+{}
+{
+	< tREAD >
+	< tINI_PARENT >
+	resto_inst_leer()
+	< tFIN_PARENT >
+}
+
+//.............................. resto_inst_leer: (<tIDENT>) (<tCOMA> <tIDENT>)*
+void resto_inst_leer():
+{}
+{
+	( < tIDENT > ) ( < tCOMA > < tIDENT > )*
+}
+
+//.............................. inst_leer_linea: <tREAD> <tINI_PARENT> resto_inst_leer_linea() <tFIN_PARENT>
+void inst_leer_linea():
+{}
+{
+	< tREAD_LN >
+	< tINI_PARENT >
+	resto_inst_leer_linea()
+	< tFIN_PARENT >
+}
+
+//.............................. resto_inst_leer: (<tIDENT>) (<tCOMA> <tIDENT>)* | e
+void resto_inst_leer_linea():
+{}
+{
+	( ( < tIDENT >) (< tCOMA > < tIDENT > )* )?
+}
+
+//.............................. inst_escribir:<tPRINT> <tINI_PARENT> resto_inst_escribir() <tFIN_PARENT>
+void inst_escribir():
+{}
+{
+	< tPRINT >
+	< tINI_PARENT >
+	resto_inst_escribir()
+	< tFIN_PARENT >
+}
+
+//.............................. resto_inst_escribir: (expresion()) (<tCOMA> expresion())*
+void resto_inst_escribir():
+{}
+{
+	expresion() ( < tCOMA > expresion() )*
+}
+
+//................. inst_escribir: < tPRINT_LN > < tINI_PARENT > resto_inst_escribir_linea() < tFIN_PARENT >
+void inst_escribir_linea():
+{}
+{
+	< tPRINT_LN >
+	< tINI_PARENT >
+	resto_inst_escribir_linea()
+	< tFIN_PARENT >
+}
+
+//.............................. inst_escribir_linea: (expresion()) (< tCOMA > expresion())* | //Epsilon
+void resto_inst_escribir_linea():
+{}
+{
+	(expresion() ( < tCOMA > expresion() )* )?
+
+}
+
+//............ inst_seleccion: <tIF> <tINI_PARENT> expresion <tFIN_PARENT> <tINI_LLAVES> (instruccion)* <tFIN_LLAVES>
+void inst_seleccion():
+{}
+{
+	< tIF > < tINI_PARENT > expresion() < tFIN_PARENT > < tINI_LLAVES > ( instruccion() )* < tFIN_LLAVES > (< tELSE > < tINI_LLAVES > ( instruccion() )* < tFIN_LLAVES >)?
+}
+
+//....................... inst_invoc_proc: <tIDENT> <tINI_PARENT> (expresion <tCOMA>)* expresion <tFIN_PARENT>
+void inst_invoc_proc():
+{}
+{
+	< tIDENT > < tINI_PARENT > parametros_invoc_proc() < tFIN_PARENT >
+}
+
+//.............................. parametros_invoc_proc: expresion | (<tCOMA> expresion)* | e
+void parametros_invoc_proc():
+{}
+{
+	(expresion() ( < tCOMA > expresion() )*)?
+}
+
+//.......... inst_iteracion: <tWHILE> <tINI_PARENT> expresion <tFIN_PARENT> <tINI_LLAVES> (instruccion)* <tFIN_LLAVES>
+void inst_iteracion():
+{}
+{
+	< tWHILE > < tINI_PARENT >  expresion() < tFIN_PARENT > < tINI_LLAVES > ( instruccion() )* < tFIN_LLAVES >
+}
+
+//.............................. inst_return: <tRETURN> expresion
+void inst_return():
+{} 
+{
+	< tRETURN > expresion()
+}
+
+//.............................. inst_asignacion: inst_asignacion: asignable <tIGUAL> asignacion
+void inst_asignacion():
+{}
+{
+	asignable()
+	< tIGUAL >
+	expresion()
+}
+
+//............................... asignable: < tIDENT > ( < tINI_CORCH > expresion() < tFIN_CORCH > )?
+void asignable():
+{}
+{
+	< tIDENT > ( < tINI_CORCH > expresion() < tFIN_CORCH > )? 
+}
+
+//............................... expresion: relacion (mas_relation)?
+void expresion():
+{}
+{
+ 	relacion()
+ 	( mas_relation() )?
+}
+
+//................................ mas_relation: (and_or relacion)+
+void mas_relation():
+{}
+{
+	( and_or() relacion() )+
+}
+
+//................................. and_or: <tAND> | <tOR>
+void and_or():
+{}
+{
+	< tOR >
+|	< tAND >
+}
+
+//.................................. relacion: expresion_simple (operador_relacional expresion_simple)?
+void relacion():
+{}
+{
+	expresion_simple()
+	( 
+		operador_relacional()
+		expresion_simple()
+	)?
+}
+
+//.................... operador_relacional: <tEQUIVALE> | <tMENOR> | <tMAYOR> | <tMENOR_IG> | <tMAYOR_IG> | <tDIST>
+void operador_relacional():
+{}
+{
+	< tEQUIVALE >
+|	< tMENOR >
+|	< tMAYOR >
+|	< tMENOR_IG >
+|	< tMAYOR_IG >
+|	< tDIST >
+}
+
+//.................................... expresion_simple: (op_MAS_MENOS)? termino (op_MAS_MENOS termino)*
+void expresion_simple():
+{}
+{
+	( op_MAS_MENOS() )? 
+	termino()
+	( LOOKAHEAD(2) op_MAS_MENOS() termino() )*
+}
+
+//..................................... op_MAS_MENOS: <tSUM> | <tRES>
+void op_MAS_MENOS():
+{}
+{
+	< tSUM > 
+|	< tRES >
+}
+
+//...................................... termino: factor (op_MULT factor)*
+void termino():
+{}
+{
+	factor()
+	( op_MULT() factor() )*
+}
+
+//....................................... op_MULT: <tMUL> | <tDIV> | <tMODULO>
+void op_MULT():
+{}
+{
+	< tMUL >
+|	< tDIV >
+|	< tMODULO>
+}
+
+//........................................ factor: primario | <tNEG> primario
+void factor():
+{}
+{
+	primario()
+|	< tNEG > primario()
+}
+
+//.........................................
+void primario():
+{}
+{
+	< tINI_PARENT > expresion() < tFIN_PARENT >
+|	< tINT2CHAR > < tINI_PARENT > expresion() < tFIN_PARENT >
+|	< tCHAR2INT > < tINI_PARENT > expresion() < tFIN_PARENT >
+|	LOOKAHEAD(2) < tIDENT > < tINI_PARENT > (expresion() ( < tCOMA > expresion() )*)? < tFIN_PARENT > //Llamada a funcion
+|	LOOKAHEAD(2) < tIDENT > < tINI_CORCH > expresion() < tFIN_CORCH > //Vector
+|	< tIDENT >
+|	< tDIGIT_CONST >
+|	< tCHAR_CONST >
+|	< tSTRING_CONST >
+|	< tTRUE >
+|	< tFALSE >
+}
+
+//........................... tipo: <tCHAR> | <tINT> | <tBOOL> | <tCADENA> | <tVOID>
+void tipo():
+{}
+{
+	<tCHAR> | <tINT> | <tBOOL> | <tCADENA> | <tVOID>
+}
+
+
+//------------ Símbolo inicial de la gramática. Para análisis léxico no hace falta más
+/*void Programa() : 
+{
+
+}
+{
+	( 
+		< tBOOL > | < tCHAR > | < tINT > | < tCADENA > | < tVOID > | < tRETURN >  | < tWHILE > | <tIF> | <tELSE> | < tCOMA > | < tPCOMA >
+		| < tDIV > | < tSUM > | < tRES > | < tMUL > | <tMODULO> | < tIGUAL > | < tDIST > | < tEQUIVALE > | < tMENOR > | < tMAYOR > | < tMENOR_IG >
+		| < tMAYOR_IG > | < tAND > | < tOR > | < tNEG > | < tREF > | < tINI_CORCH > | < tFIN_CORCH > | < tINI_PARENT > | < tFIN_PARENT > | < tINI_LLAVES >
+		| < tFIN_LLAVES > | < tIDENT > | < tDIGIT_CONST > | < tSTRING_CONST > | < tCHAR_CONST > | < tTRUE > | < tFALSE >
+	)+
+	< EOF >
+}*/
