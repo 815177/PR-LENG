@@ -146,6 +146,7 @@ void declaracion_variables():
 {
  	tipo()
 	< tIDENT >
+	(<tINI_CORCH> <tDIGIT_CONST> <tFIN_CORCH>)?
 	resto_declaracion_vars()
 }
 
@@ -153,7 +154,7 @@ void declaracion_variables():
 void resto_declaracion_vars():
 {}
 {
-	<tCOMA> < tIDENT > resto_declaracion_vars() 
+	<tCOMA> < tIDENT > (<tINI_CORCH> <tDIGIT_CONST> <tFIN_CORCH>)? resto_declaracion_vars() 
 	| <tPCOMA>
 }
 
@@ -183,7 +184,10 @@ void resto_declaracion_func_proc():
 void declaracion_variables_func_proc():
 {}
 {
- 	( tipo() (< tREF >)? < tIDENT > ( < tCOMA > tipo() (< tREF >)? < tIDENT > )* )?
+ 	( tipo() (< tREF >)? < tIDENT > 
+	(<tINI_CORCH> <tDIGIT_CONST> <tFIN_CORCH>)? 
+	( < tCOMA > 
+	tipo() (< tREF >)? < tIDENT > (<tINI_CORCH> <tDIGIT_CONST> <tFIN_CORCH>)?)* )?
 }
 
 //........................ 
@@ -194,7 +198,7 @@ void instruccion():
 |	inst_leer_linea() < tPCOMA > 
 |	inst_escribir() < tPCOMA >
 |	inst_escribir_linea() < tPCOMA >
-|	LOOKAHEAD(2) inst_invoc_proc() < tPCOMA >	//Cambiar a expresion
+|	LOOKAHEAD(3) inst_invoc_proc() < tPCOMA >	
 |	inst_asignacion() < tPCOMA > 
 |	inst_seleccion()
 |	inst_iteracion()
@@ -270,6 +274,13 @@ void resto_inst_escribir_linea():
 
 }
 
+//............ inst_seleccion: <tIF> <tINI_PARENT> expresion <tFIN_PARENT> <tINI_LLAVES> (instruccion)* <tFIN_LLAVES>
+void inst_seleccion():
+{}
+{
+	< tIF > < tINI_PARENT > expresion() < tFIN_PARENT > < tINI_LLAVES > ( instruccion() )* < tFIN_LLAVES > (< tELSE > < tINI_LLAVES > ( instruccion() )* < tFIN_LLAVES >)?
+}
+
 //....................... inst_invoc_proc: <tIDENT> <tINI_PARENT> (expresion <tCOMA>)* expresion <tFIN_PARENT>
 void inst_invoc_proc():
 {}
@@ -282,13 +293,6 @@ void parametros_invoc_proc():
 {}
 {
 	(expresion() ( < tCOMA > expresion() )*)?
-}
-
-//............ inst_seleccion: <tIF> <tINI_PARENT> expresion <tFIN_PARENT> <tINI_LLAVES> (instruccion)* <tFIN_LLAVES>
-void inst_seleccion():
-{}
-{
-	< tIF > < tINI_PARENT > expresion() < tFIN_PARENT > < tINI_LLAVES > ( instruccion() )* < tFIN_LLAVES > (< tELSE > < tINI_LLAVES > ( instruccion() )* < tFIN_LLAVES >)?
 }
 
 //.......... inst_iteracion: <tWHILE> <tINI_PARENT> expresion <tFIN_PARENT> <tINI_LLAVES> (instruccion)* <tFIN_LLAVES>
@@ -311,18 +315,10 @@ void inst_asignacion():
 {
 	asignable()
 	< tIGUAL >
-	asignacion()
+	expresion()
 }
 
-//............................... asignacion: expresion | inst_invoc_proc
-void asignacion():
-{}
-{
-	LOOKAHEAD(3) expresion()
-|	inst_invoc_proc()
-}
-
-//............................... asignacion: expresion | inst_invoc_proc
+//............................... asignable: < tIDENT > ( < tINI_CORCH > expresion() < tFIN_CORCH > )?
 void asignable():
 {}
 {
@@ -424,7 +420,7 @@ void primario():
 	< tINI_PARENT > expresion() < tFIN_PARENT >
 |	< tINT2CHAR > < tINI_PARENT > expresion() < tFIN_PARENT >
 |	< tCHAR2INT > < tINI_PARENT > expresion() < tFIN_PARENT >
-|	LOOKAHEAD(2) < tIDENT > < tINI_PARENT > ( expresion() )* < tFIN_PARENT > //Llamada a funcion
+|	LOOKAHEAD(2) < tIDENT > < tINI_PARENT > (expresion() ( < tCOMA > expresion() )*)? < tFIN_PARENT > //Llamada a funcion
 |	LOOKAHEAD(2) < tIDENT > < tINI_CORCH > expresion() < tFIN_CORCH > //Vector
 |	< tIDENT >
 |	< tDIGIT_CONST >
